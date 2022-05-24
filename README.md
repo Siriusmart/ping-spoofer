@@ -8,8 +8,8 @@ git clone https://github.com/Siriusmart/ping-spoofer && cd ping-spoofer && sh ./
 
 ## Commands:
 ```bash
-ping-spoofer start [ms] [device]
-ping-spoofer stop [device]
+ping-spoofer on [ms] [device]
+ping-spoofer off [device]
 ping-spoofer uninstall
 ping-spoofer --help
 ping-spoofer --version

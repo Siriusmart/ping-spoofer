@@ -6,8 +6,8 @@ const HELP: &str = "Ping Spoofer Help
 Overview: Ping Spoofer is a simple CLI tool that artificially increases your ping systemwide.
 
 Commands:
- - ping-spoofer start [ms] [device]
- - ping-spoofer stop [device]
+ - ping-spoofer on [ms] [device]
+ - ping-spoofer off [device]
  - ping-spoofer uninstall
  - ping-spoofer --help
  - ping-spoofer --version
