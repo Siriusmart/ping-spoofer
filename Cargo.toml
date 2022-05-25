@@ -6,7 +6,7 @@ authors = ["Siriusmart <siriusmart@tuta.io>"]
 description = "A simple CLI tool that artificially increases your ping systemwide without entering sudo password every time (For Linux only)"
 readme = "README.md"
 license = "GPL-3.0"
-keywords = ["cli", "ping", "spoof", "latency", "ping-spoofer", "linux"]
+keywords = ["cli", "ping", "spoof", "latency", "linux"]
 categories =["command-line-interface", "command-line-utilities"]
 repository = "https://github.com/Siriusmart/ping-spoofer"
 
