@@ -1,5 +1,5 @@
 # Overview
-Ping Spoofer is a simple CLI tool that artificially increases your ping systemwide.
+A simple CLI tool that artificially increases your ping systemwide.
 
 ## Installation
 ```bash
