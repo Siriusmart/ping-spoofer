@@ -1,6 +1,11 @@
-use std::{env, process::Command};
+use nix::unistd;
+use std::{
+    env,
+    process::{self, Command},
+};
 
-const VERSION: &str = "1.0.0";
+const VERSION: &str = "Version 1.1.0";
+const UID_TO_ROOT: &str = "Failed to set uid to root\nFollow the instructions in the url below to setup the program:\nhttps://github.com/Siriusmart/ping-spoofer";
 const HELP: &str = "Ping Spoofer Help
 
 Overview: Ping Spoofer is a simple CLI tool that artificially increases your ping systemwide.
@@ -9,20 +14,67 @@ Commands:
  - ping-spoofer on [ms] [device]
  - ping-spoofer off [device]
  - ping-spoofer uninstall
- - ping-spoofer --help
- - ping-spoofer --version
+
+Flags (note that the flags can be placed anywhere in the command):
+ - help: Prints this help message
+ - version: Prints the version of the tool
+ - bypass-root: Bypasses the root check
 
 Reference:
  - [ms] is the amount of milliseconds to increase your ping by.
- - [device] is the device to increase your ping on, can be found by running 'tc qdisc ls', it looks something like this: eth0/lan0/wlan0/...";
+ - [device] is the device to increase your ping on, can be found by running 'tc qdisc ls', it looks something like this: eth0/lan0/wlan0/...
+ 
+ Examples:
+ - ping-spoofer on 100 wlan0
+ - ping-spoofer off wlan0
+ - ping-spoofer on 100 wlan0 --bypass-root
+ - ping-spoofer off wlan0 --bypass-root
+";
 
 fn main() {
-    let mut args = env::args().collect::<Vec<String>>().into_iter().skip(1);
+    let mut args = env::args()
+        .collect::<Vec<String>>()
+        .into_iter()
+        .skip(1)
+        .filter(|arg| {
+            if arg.starts_with("--") {
+                match arg.as_str() {
+                    "--help" => {
+                        println!("{}", HELP);
+                        process::exit(0);
+                    }
+
+                    "--version" => {
+                        println!("{}", VERSION);
+                        process::exit(0);
+                    }
+
+                    "--bypass-root" => {
+                        match unistd::setuid(unistd::Uid::from_raw(0)) {
+                            Ok(_) => {}
+                            Err(_) => {
+                                println!("{}", UID_TO_ROOT);
+                                process::exit(1);
+                            }
+                        }
+                        return false;
+                    }
+
+                    _ => {
+                        println!("Unknown flag: {}", arg);
+                        process::exit(1);
+                    }
+                }
+            }
+
+            true
+        });
+
     let cmd_type;
 
     match args.next() {
         None => {
-            println!("No arguments provided");
+            println!("No arguments provided. Run 'ping-spoofer --help' for more information.");
             return;
         }
         Some(s) => {
@@ -60,10 +112,6 @@ fn main() {
 
                 "uninstall" => CommandType::Uninstall,
 
-                "--help" => CommandType::Help,
-
-                "--version" => CommandType::Version,
-
                 _ => {
                     println!("Invalid argument");
                     return;
@@ -96,31 +144,27 @@ fn main() {
         }
 
         CommandType::Uninstall => {
-            let mut command_uninstall = Command::new("sudo");
-            command_uninstall.args(["rm", "/bin/ping-spoofer"]);
+            let mut command_uninstall = Command::new("rm");
+            command_uninstall.args(["-f", "/bin/ping-spoofer"]);
             command_uninstall.output().unwrap();
+
+            match home::home_dir() {
+                Some(path) => {
+                    let mut command_uninstall = Command::new("rm");
+                    command_uninstall.args(["-f", path.join(".cargo/bin/ping-spoofer").to_str().unwrap()]);
+                    command_uninstall.output().unwrap();
+                },
+                None => println!("Unable to get your home dir. Skipping ~/.cargo/bin/ping-spoofer"),
+            }
             println!("Uninstalled successfully");
-        }
-
-        CommandType::Help => {
-            println!("{}", HELP);
-            return;
-        }
-
-        CommandType::Version => {
-            println!("{}", VERSION);
-            return;
         }
     };
 }
 
-#[derive(Debug)]
 enum CommandType {
     On(usize, String),
     Off(String),
     Uninstall,
-    Help,
-    Version,
 }
 
 impl CommandType {

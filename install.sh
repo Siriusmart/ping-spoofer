@@ -1,12 +1,33 @@
 #!/bin/bash
 
-FILE="./src/main.rs"
-FILE_NO_EXT="${FILE%.*}"
+FILE="./target/release/ping-spoofer"
 
-rustc "$FILE" -o "$FILE_NO_EXT"
-sudo chown root:root "$FILE_NO_EXT"
-sudo chmod 4755 "$FILE_NO_EXT"
+echo "Building..."
 
-sudo mv ./src/main /bin/ping-spoofer
+cargo build --release
+
+echo "Would you like to allow ping spoofer to run as root without password? (Y/n)"
+read answer
+
+case $answer in
+    y) sudo chown root:root "$FILE"
+    sudo chmod 4755 "$FILE";;
+    n) echo "OK, not running as root
+    ";;
+    *) echo "Defaulting to running as root"
+        sudo chown root:root "$FILE"
+        sudo chmod 4755 "$FILE";;
+esac
+
+echo "Would you like to install the binary to on of the following locations?
+    1. /bin (default)
+    2. ~/.cargo/bin"
+read answer
+
+case $answer in
+    1) sudo mv "$FILE" /bin/ping-spoofer -f;;
+    2) mv "$FILE" ~/.cargo/bin/ping-spoofer -f;;
+    *) sudo mv "$FILE" /bin/ping-spoofer -f;;
+esac
 
 cd .. && rm -rf ./ping-spoofer
