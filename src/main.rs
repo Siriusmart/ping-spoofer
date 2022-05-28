@@ -13,6 +13,9 @@ Overview: Ping Spoofer is a simple CLI tool that artificially increases your pin
 Commands:
  - ping-spoofer on [ms] [device]
  - ping-spoofer off [device]
+ - ping-spoofer increase [ms] [device]
+ - ping-spoofer decrease [ms] [device]
+ - ping-spoofer status [device]
  - ping-spoofer uninstall
 
 Flags (note that the flags can be placed anywhere in the command):
@@ -110,6 +113,40 @@ fn main() {
                     Some(s) => s,
                 }),
 
+                "increase" | "decrease" => {
+                    let change = match args.next() {
+                        None => {
+                            println!("No arguments provided");
+                            return;
+                        }
+                        Some(s) => match s.parse::<i32>() {
+                            Ok(n) => n,
+                            Err(_) => {
+                                println!("Invalid argument");
+                                return;
+                            }
+                        },
+                    };
+
+                    let device = match args.next() {
+                        None => {
+                            println!("No device provided");
+                            return;
+                        }
+                        Some(s) => s,
+                    };
+
+                    CommandType::Change(if s == "increase" { change } else { -change }, device)
+                }
+
+                "status" => CommandType::Status(match args.next() {
+                    None => {
+                        println!("No device provided");
+                        return;
+                    }
+                    Some(s) => s,
+                }),
+
                 "uninstall" => CommandType::Uninstall,
 
                 _ => {
@@ -122,13 +159,13 @@ fn main() {
 
     match &cmd_type {
         CommandType::On(_, device) | CommandType::Off(device) => {
-            let mut command_off = Command::new("sudo");
-            command_off.args(["tc", "qdisc", "del", "dev", &device, "root"]);
-            command_off.output().unwrap();
+            let mut command = Command::new("sudo");
+            command.args(["tc", "qdisc", "del", "dev", &device, "root"]);
+            command.output().unwrap();
 
             if cmd_type.is_on() {
-                let mut command_on = Command::new("sudo");
-                command_on.args([
+                let mut command = Command::new("sudo");
+                command.args([
                     "tc",
                     "qdisc",
                     "add",
@@ -139,8 +176,58 @@ fn main() {
                     "delay",
                     &format!("{}ms", cmd_type.get_ms()),
                 ]);
-                command_on.output().unwrap();
+                command.output().unwrap();
             }
+        }
+
+        CommandType::Change(ms, device) => {
+            let mut command = Command::new("sudo");
+            command.args(["tc", "qdisc", "show", "dev", &device]);
+
+            let output = command.output().unwrap();
+            let mut output_string = String::from_utf8(output.stdout).unwrap();
+            output_string = output_string.lines().next().unwrap().to_string();
+
+            let output_args = output_string.split(" ");
+
+            let mut command = Command::new("sudo");
+            command.args(["tc", "qdisc", "del", "dev", &device, "root"]);
+            command.output().unwrap();
+
+            for arg in output_args {
+                if arg.ends_with("ms") {
+                    let original_ms = arg[..arg.len() - 2].parse::<i32>().unwrap();
+                    let mut command = Command::new("sudo");
+
+                    command.args([
+                        "tc",
+                        "qdisc",
+                        "add",
+                        "dev",
+                        &device,
+                        "root",
+                        "netem",
+                        "delay",
+                        &format!("{}ms", original_ms + ms),
+                    ]);
+                    command.output().unwrap();
+                }
+            }
+
+            let mut command = Command::new("sudo");
+
+            command.args([
+                "tc",
+                "qdisc",
+                "add",
+                "dev",
+                &device,
+                "root",
+                "netem",
+                "delay",
+                &format!("{}ms", ms),
+            ]);
+            command.output().unwrap();
         }
 
         CommandType::Uninstall => {
@@ -151,12 +238,33 @@ fn main() {
             match home::home_dir() {
                 Some(path) => {
                     let mut command_uninstall = Command::new("rm");
-                    command_uninstall.args(["-f", path.join(".cargo/bin/ping-spoofer").to_str().unwrap()]);
+                    command_uninstall
+                        .args(["-f", path.join(".cargo/bin/ping-spoofer").to_str().unwrap()]);
                     command_uninstall.output().unwrap();
-                },
+                }
                 None => println!("Unable to get your home dir. Skipping ~/.cargo/bin/ping-spoofer"),
             }
             println!("Uninstalled successfully");
+        }
+
+        CommandType::Status(device) => {
+            let mut command = Command::new("sudo");
+            command.args(["tc", "qdisc", "show", "dev", &device]);
+
+            let output = command.output().unwrap();
+            let mut output_string = String::from_utf8(output.stdout).unwrap();
+            output_string = output_string.lines().next().unwrap().to_string();
+
+            let output_args = output_string.split(" ");
+
+            for arg in output_args {
+                if arg.ends_with("ms") {
+                    println!("{}", arg);
+                    return;
+                }
+            }
+
+            println!("Ping spoofer is off");
         }
     };
 }
@@ -164,6 +272,8 @@ fn main() {
 enum CommandType {
     On(usize, String),
     Off(String),
+    Change(i32, String),
+    Status(String),
     Uninstall,
 }
 

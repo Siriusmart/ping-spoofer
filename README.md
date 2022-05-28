@@ -3,19 +3,22 @@ A simple CLI tool that artificially increases your ping systemwide.
 
 ## Installation
 ```bash
-git clone https://github.com/Siriusmart/ping-spoofer && cd ping-spoofer && sh ./install.sh
+git clone https://github.com/Siriusmart/ping-spoofer && cd ping-spoofer && sh ./install.sh && cd ..
 ```
 
 ## Commands:
 ```bash
 ping-spoofer on [ms] [device]
 ping-spoofer off [device]
+ping-spoofer increase [ms] [device]
+ping-spoofer decrease [ms] [device]
+ping-spoofer status [device]
 ping-spoofer uninstall
 ```
 
 for more information, run:
 ```bash
-ping-spoofer help
+ping-spoofer --help
 ```
 
 ## Reference:
