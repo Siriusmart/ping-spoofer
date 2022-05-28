@@ -1,6 +1,6 @@
 [package]
 name = "ping-spoofer"
-version = "1.2.0"
+version = "1.2.1"
 edition = "2021"
 authors = ["Siriusmart <siriusmart@tuta.io>"]
 description = "A simple CLI tool that artificially increases your ping systemwide without entering sudo password every time (For Linux only)"

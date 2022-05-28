@@ -30,4 +30,4 @@ case $answer in
     *) sudo mv "$FILE" /bin/ping-spoofer -f;;
 esac
 
-# cd .. && rm -rf ./ping-spoofer
+cd .. && rm -rf ./ping-spoofer
