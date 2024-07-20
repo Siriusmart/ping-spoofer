@@ -14,4 +14,5 @@ repository = "https://github.com/Siriusmart/ping-spoofer"
 
 [dependencies]
 nix = "0.24"
+libc = "0.2"  
 home = "0.5"
